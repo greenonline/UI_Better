@@ -9,7 +9,7 @@ An improved version of the Perl module Term::UI
 
 ### Term::UI bugs
 
-There is a bug or two in the Term::UI:
+There is a bug or two in v0.50 of [Term::UI](https://perldoc.perl.org/5.12.2/Term::UI):
 
  - History inconsistency – index or selection
  - Duplicate history - two entries for each input
@@ -278,7 +278,7 @@ Note that this does not work, from [Disabling autohistory in Term::ReadLine
 $term->MinLine();
 ```
 
-However, from [Term::ReadLine::Gnu vs. history control](https://www.perlmonks.org/?node_id=1007439), setting to a high value effectivly disables the `readline` history, thereby allowing the UI history to operte as expected.
+However, from [Term::ReadLine::Gnu vs. history control](https://www.perlmonks.org/?node_id=1007439), setting to a high value effectivly disables the `readline` history, thereby allowing the UI history to operate as expected.
 
 ```none
 # This disables autohistory
@@ -286,6 +286,8 @@ $term->MinLine(MAX);
 ```
 
 So, the only changes to the modules themselves required are to `UI.pm`.
+
+### Provided files
 
 A fixed verion of `UI.pm` called `UI_Better.pm` is included in this repository. 
 
@@ -295,3 +297,5 @@ For the ease of changing the behaviour of `UI_Better`, there are two flag near t
 our $flg_post_add_history = 1;  # Move the add history to the end of _tt_readline()
 our $flg_no_history = 0;        # Disable all history calls in _tt_readline()
 ```
+
+The associated file `UI_Better/History_Better.pm` is actually identical (apart from the package name changes) to the original `History.pm` of [Term::UI](https://perldoc.perl.org/5.12.2/Term::UI) as is only included for completeness.
