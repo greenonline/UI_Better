@@ -5,7 +5,7 @@ An improved version of the Perl module Term::UI
 
  - [The problem with Term::UI](https://gr33nonline.wordpress.com/2026/03/10/the-problem-with-termui/)
 
-## Links
+## Links
 
  - [The synopsis should probably show the disabling of the autohistory in ReadLine #21](https://github.com/jib/term-ui/issues/21)
  - [The history shows the index selected, rather than the selected item's name #22](https://github.com/jib/term-ui/issues/22)
