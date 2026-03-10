@@ -59,7 +59,9 @@ The history is saved here, in UI.pm, in `_tt_readline()`:
 
 ```
 
-Fix: Move the following three lines
+##### The fix for the inconsistency
+
+The fix is to move the following three lines
 
 ```none
         $term->addhistory( $answer ) if length $answer;
@@ -69,7 +71,7 @@ Fix: Move the following three lines
 
 ```
 
- to the `else{}` block containing the return from `_tt_readline()` at the end of the function, like so:
+to the `else{}` block containing the return from `_tt_readline()` at the end of the function, like so:
 
 
 ```none
@@ -247,9 +249,15 @@ Commenting out both lines results in the index being saved only once, no duplica
 #### In `readline.pm`
 
 In `readline.pm` there is a function `add_line_to_history()`. 
-It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. If you comment out the calls to `add_line_to_history()` in both `F_AcceptLine()` and `F_SaveLine` then no history is written and the issue of the written index goes away.
+It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. 
 
-If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – tht is to say that the history only shows the actual selection and never the index.
+##### The fix for the duplicates - module hack
+
+If you comment out the calls to `add_line_to_history()` in both `F_AcceptLine()` and `F_SaveLine` then no history is written and the issue of the written index goes away.
+
+If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – that is to say that the history only shows the actual selection and never the index.
+
+*However, there is a **better and simpler** fix, please continue reading...*
 
 
 ### Effecting the changes
@@ -261,7 +269,6 @@ However, duplicating `readline.pm` and creating `ReadLine_Better/readline_Better
 Surely, there should be a standard way of invoking `ReadLine` and disabling the history – without the need to "hack" the module itself?
 
 ### Disabling the "autohistory"
-
 
 See [Term::ReadLine - I need to hit the up arrow twice to retrieve history](https://stackoverflow.com/q/13332908/4424636) which pretty much describes **Bug#2** above, the duplicate call to `$term->addhistory()`.
 
