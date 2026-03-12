@@ -1,5 +1,5 @@
 # UI_Better
-An improved version of the Perl module Term::UI
+An improved version of the Perl module `Term::UI`
 
 ## See also
 
@@ -9,13 +9,32 @@ An improved version of the Perl module Term::UI
 
 ### Term::UI bugs
 
-There is a bug or two in v0.50 of [Term::UI](https://perldoc.perl.org/5.12.2/Term::UI):
+There is a bug or two in v0.50 of [`Term::UI`](https://perldoc.perl.org/5.12.2/Term::UI):
+
+#### Bugs
+
+Issues, and errors, arising from inconsistencies in functionality, duplicated output and unusual conditions:
 
  - History inconsistency – index or selection
  - Duplicate history - two entries for each input
  - If no default is specified, hitting Enter causes error due to uninitialised variable, `$answer` in `split()`
- - Every word, on a multi-word input, is checked for validity -> Enhancement: Check only the first word for validity and return all words if the first is valid.
- - No option to print choices on one line -> Enhancement: Add option to print choices on one line
+
+#### Enhancements
+
+Some of the features of `Term::UI` are lacking the ability to fine-tune their functionality:
+
+ - No option to check only the first word, of a multi-word input, against the valid choices provided
+   - Every word, on a multi-word input, is checked for validity
+ - No option to print choices on one line 
+   - The choices are printed one-line per item, which can quickly "flood" the screen, if there are a large number of options
+ - No option to suppress printing of the choices
+   - The choices, if present, have to be display. The user may wish to suppress the automatic printing of these options, as they may be displayed elsewhere.
+
+In other words:
+
+ - Enhancement: Check only the first word for validity and return all words if the first is valid.
+ - Enhancement: Add option to print choices on one line
+ - Enhancement: Add option to suppress the automatic printing of the choices
 
 ### Bug#1: History is incorrect/inconsistant
 
@@ -297,7 +316,11 @@ If `first` is set true, then only the first word is checked, against the choices
 
 ### Bug#5 - Enhancement: Print choices on one line
 
-The code in `get_reply()` was modified to add a conditional for the `oneline` option, to `sprint` the choices in a different format to `$args->{print_me}`.
+The code in `get_reply()` was modified to add a conditional for the `oneline` option, to `sprint` the choices, in a different one-line format, to `$args->{print_me}`.
+
+### Bug#6 - Enhancement: Suppress printing of the choices
+
+The code in `get_reply()` was modified to add yet another conditional for the `nochoices` option, to suppress all statements that `sprint` the choices to `$args->{print_me}`.
 
 ### Effecting the changes
 
@@ -348,18 +371,22 @@ The associated file, `UI_Better/History_Better.pm`, is actually identical (apart
 
 ### New options
 
-`get_reply()` now takes three additional optional Boolean arguments, `resolved`, `first` and `oneline`. These  do the following:
+`get_reply()` now takes four additional optional Boolean arguments, `resolved`, `first`, `oneline` and `nochoices`. 
+
+These optional arguments do the following:
 
  - add only item names (*not* item indices) to the history
  - only check the first word in a multiword answer, against the choices provided, respectively. These both default to `off`, or `false`.
  - display the choices on one line
+ - suppress display of the choices altogether.
 
 
-`$reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], multi => BOOL, resolved => BOOL, first => BOOL, oneline => BOOL, print_me => "extra text to print & record", allow => $ref] );`
+`$reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], multi => BOOL, resolved => BOOL, first => BOOL, oneline => BOOL, nochoices => BOOL, print_me => "extra text to print & record", allow => $ref] );`
 
  - `resolved` - add only fully resolved names to the history (instead of returning both items' indices and names)
  - `first` - check *only the first word* in a multi-word input against the valid choices (instead of all of the words), and return *all* words as an array.
  - `oneline` - display the choices as a comma separated list, on one line (instead of one line per choice). The indices are *not* displayed, although it is still possible to reference a choice via its index.
+ - `nochoices` - Do not display the choices. The indices are also *not* displayed, although it is still possible to reference a choice via its index.
 
 Example usage:
 
@@ -372,6 +399,7 @@ Example usage:
                   resolved => 1,
                   first => 1,
                   oneline => 1,
+                  nochoices => 1,
                   print_me => $myprintme
               );
 ```
