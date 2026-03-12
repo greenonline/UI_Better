@@ -13,7 +13,9 @@ There is a bug or two in v0.50 of [Term::UI](https://perldoc.perl.org/5.12.2/Ter
 
  - History inconsistency – index or selection
  - Duplicate history - two entries for each input
+ - If no default is specified, hitting Enter causes error due to uninitialised variable, `$answer` in `split()`
  - Every word, on a multi-word input, is checked for validity -> Enhancement: Check only the first word for validity and return all words if the first is valid.
+ - No option to print choices on one line -> Enhancement: Add option to print choices on one line
 
 ### Bug#1: History is incorrect/inconsistant
 
@@ -254,11 +256,48 @@ It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. If you co
 
 If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – that is to say that the history only shows the actual selection and never the index.
 
-### Bug#3 - Enhancement: Check only the first word for validity
+### Bug#3 - Enter causes uninitialised variable error
+
+If `default` is not specified, then an invalid input is entered, and then enter is pressed, and error occurs:
+
+```none
+Use of uninitialized value $answer in split at UI_Better.pm line 416.
+```
+
+This is fixed by adding, in `_tt_readline()`:
+
+```none
+        if (!defined $answer){
+            $answer = "";
+        }
+```
+
+after the line
+
+```none
+        $answer     = $default unless length $answer;
+```
+
+like so,
+
+```none
+        $answer     = $default unless length $answer;
+        if (!defined $answer){
+            $answer = "";
+        }
+```
+
+
+
+### Bug#4 - Enhancement: Check only the first word for validity
 
 Some code changes have been made to the conditional within the `LOOP` in `_tt_readline()` - an additional condition or two. 
 
 If `first` is set true, then only the first word is checked, against the choices, for validity. If it is valid, then the first word and all of the other words are returned in an array. If the first word is invalid, then the user has to re-enter the input as before. This functionality also requires  `multi` to be set to `true`.
+
+### Bug#5 - Enhancement: Print choices on one line
+
+The code in `get_reply()` was modified to add a conditional for the `oneline` option, to `sprint` the choices in a different format to `$args->{print_me}`.
 
 ### Effecting the changes
 
@@ -275,11 +314,10 @@ See [Term::ReadLine - I need to hit the up arrow twice to retrieve history](http
 
 However, this "duplicate" call, in `UI.pm` would be fine, if `$term->Features->{autohistory}` is turned off.
 
-The answer to the above question mentions `$term->Features->{autohistory}` being true. But ow does one set it to false?
+The answer to the above question mentions `$term->Features->{autohistory}` being true. But how does one set it to false?
 
-Note that this does not work, from [Disabling autohistory in Term::ReadLine
+Note that the following does not work, from [Disabling autohistory in Term::ReadLine
 ](https://github.polettix.it/ETOOBUSY/2020/09/24/term-readline-autohistory/)
-
 
 ```none
 # This disables autohistory
@@ -306,17 +344,22 @@ our $flg_post_add_history = 1;  # Move the add history to the end of _tt_readlin
 our $flg_no_history = 0;        # Disable all history calls in _tt_readline()
 ```
 
-The associated file `UI_Better/History_Better.pm` is actually identical (apart from the package name changes) to the original `History.pm` of [Term::UI](https://perldoc.perl.org/5.12.2/Term::UI) as is only included for completeness.
+The associated file, `UI_Better/History_Better.pm`, is actually identical (apart from the package name changes) to the original `History.pm` of [Term::UI](https://perldoc.perl.org/5.12.2/Term::UI) as is only included for completeness.
 
 ### New options
 
-`get_reply()` now takes two additional optional Boolean arguments, `resolved` and `first`. These add only item names (*not* item indices) to the history, and; to only check the first word in a multiword answer, against the choices provided, respectively. These both default to `off`, or `false`.
+`get_reply()` now takes three additional optional Boolean arguments, `resolved`, `first` and `oneline`. These  do the following:
+
+ - add only item names (*not* item indices) to the history
+ - only check the first word in a multiword answer, against the choices provided, respectively. These both default to `off`, or `false`.
+ - display the choices on one line
 
 
-`$reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], multi => BOOL, resolved => BOOL, first => BOOL, print_me => "extra text to print & record", allow => $ref] );`
+`$reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], multi => BOOL, resolved => BOOL, first => BOOL, oneline => BOOL, print_me => "extra text to print & record", allow => $ref] );`
 
  - `resolved` - add only fully resolved names to the history (instead of returning both items' indices and names)
  - `first` - check *only the first word* in a multi-word input against the valid choices (instead of all of the words), and return *all* words as an array.
+ - `oneline` - display the choices as a comma separated list, on one line (instead of one line per choice). The indices are *not* displayed, although it is still possible to reference a choice via its index.
 
 Example usage:
 
@@ -328,6 +371,7 @@ Example usage:
                   multi => 1,
                   resolved => 1,
                   first => 1,
+                  oneline => 1,
                   print_me => $myprintme
               );
 ```
