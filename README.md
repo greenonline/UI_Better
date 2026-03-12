@@ -388,17 +388,77 @@ These optional arguments do the following:
  - `oneline` - display the choices as a comma separated list, on one line (instead of one line per choice). The indices are *not* displayed, although it is still possible to reference a choice via its index.
  - `nochoices` - Do not display the choices. The indices are also *not* displayed, although it is still possible to reference a choice via its index.
 
-Example usage:
+### Example usage
+
+In the examples below, it should be noted that the default has been "disabled" by commenting out that line. If you require a default, then un-comment the line.
+
+Multi-word input but check only first word against valid choices, add only choice item name to history (and not the choice index):
 
 ```none
+  # Check only first word against valid choices
+  # Multi-word input
+  # Add only choice item name to history
   return $term->get_reply(
                   prompt => $myprompt,
                   choices => \@mychoices,
-                  default => $mydefault,
+                  #default => $mydefault,
+                  multi => 1,
+                  resolved => 1,
+                  first => 1,
+                  print_me => $myprintme
+              );
+```
+
+Display choices on one line, multi-word input (and check each word against valid choices), add only choice item name to history (and not the choice index):
+
+```none
+  # Display choices on one line
+  # Multi-word input
+  # Add only choice item name to history
+  return $term->get_reply(
+                  prompt => $myprompt,
+                  choices => \@mychoices,
+                  #default => $mydefault,
+                  multi => 1,
+                  resolved => 1,
+                  oneline => 1,
+                  print_me => $myprintme
+              );
+```
+
+Display choices on one line, multi-word input but  check only first word against valid choices, add only choice item name to history (and not the choice index):
+
+```none
+  # Display choices on one line
+  # Multi-word input
+  # Check only first word against valid choices
+  # Add only choice item name to history
+  return $term->get_reply(
+                  prompt => $myprompt,
+                  choices => \@mychoices,
+                  #default => $mydefault,
                   multi => 1,
                   resolved => 1,
                   first => 1,
                   oneline => 1,
+                  print_me => $myprintme
+              );
+```
+
+No choices displayed, multi-word input but check only the first word against valid choices, add only choice item name to history (and not the choice index):
+
+```none
+  # Suppress display of choices
+  # Multi-word input
+  # Check only first word against valid choices
+  # Add only choice item name to history
+  return $term->get_reply(
+                  prompt => $myprompt,
+                  choices => \@mychoices,
+                  #default => $mydefault,
+                  multi => 1,
+                  resolved => 1,
+                  first => 1,
                   nochoices => 1,
                   print_me => $myprintme
               );
