@@ -116,7 +116,7 @@ What is your favourite colour? [1]: 3
 Do you like cookies? [Y/n]: 3                                               
 ```
 
-#### Further experimentation – Not really required
+##### Further experimentation – Not really required
 
 If you use this extended example from the synopsis (but with an aditional third question/response), with the original `UI.pm` code, the issue becomes clearer:
 
@@ -173,7 +173,7 @@ $hist = $term->history_as_string;
 
 You require two up key presses to get to the preceding history item: When you get to the third question, press the up arrow repeatedly – there are two "n" then "green" and finally "3".
 
-#### Where is the history set?
+##### Where is the history set?
 
 Even if you comment out each and every (there are 8) occurence of `history(` in `UI.pm`, the history is still saved, once. So it must be also be saved either by `Term::UI::History.pm`, or `Term::ReadLine`. 
 
@@ -192,7 +192,7 @@ However, there *appear* to be no "save to history" statements in UI::History.pm,
 
 Is `autohistory` the issue? Changing it doesn't seem to have an effect, however.
 
-#### The duplication is caused by `$term->addhistory()`
+##### The duplication is caused by `$term->addhistory()`
 
 By accident, I noted that commenting out the line
 
@@ -245,12 +245,12 @@ In fact, the behaviour of commenting out only the second line is the same as not
 
 Commenting out both lines results in the index being saved only once, no duplicates. However, where is this index being saved?
 
-#### In `readline.pm`
+##### In `readline.pm`
 
 In `readline.pm` there is a function `add_line_to_history()`. 
 It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. If you comment out the calls to `add_line_to_history()` in both `F_AcceptLine()` and `F_SaveLine` then no history is written and the issue of the written index goes away.
 
-If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – tht is to say that the history only shows the actual selection and never the index.
+If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – that is to say that the history only shows the actual selection and never the index.
 
 #### Bug#3 - Enhancement: Check only the first word for validity
 
@@ -288,7 +288,7 @@ However, from [Term::ReadLine::Gnu vs. history control](https://www.perlmonks.or
 
 ```none
 # This disables autohistory
-$term->MinLine(1000);
+$term->MinLine(10000);
 ```
 
 So, the only changes to the modules themselves required are to `UI.pm`.
