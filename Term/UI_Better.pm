@@ -139,6 +139,7 @@ sub get_reply {
         resolved    => { default => 0,      allow => [0, 1] },
         first       => { default => 0,      allow => [0, 1] },
         oneline     => { default => 0,      allow => [0, 1] },
+        nochoices   => { default => 0,      allow => [0, 1] },
         allow       => { default => qr/.*/ },
         print_me    => { default => '',     strict_type => 1 },
     };
@@ -176,9 +177,10 @@ sub get_reply {
         my $i;
         my $choices_width = length( sprintf( "%d", scalar @{ $args->{ 'choices' } } ) );
 
+        ### If 'oneline' then open list with an open parenthesis 
         if (!$args->{ 'oneline' }){
         } else {
-          $args->{print_me} .= sprintf "(";
+          $args->{print_me} .= sprintf "("  if !$args->{ 'nochoices' };
         }
 
         for my $choice ( @{$args->{choices}} ) {
@@ -196,27 +198,32 @@ sub get_reply {
                 }
             }
 
-            ### create a "DIGIT> choice" type line
+            ### If 'oneline' is not true then print as previously done
             if (!$args->{ 'oneline' }){
-                $args->{print_me} .= sprintf "\n%*s> %-s", $choices_width, $i, $choice;
+                ### create a "DIGIT> choice" type line
+                $args->{print_me} .= sprintf "\n%*s> %-s", $choices_width, $i, $choice if !$args->{ 'nochoices' };
             } else {
-                $args->{print_me} .= sprintf "%s", $choice;
+                ### If 'oneline' is true then print on one line, without indices
+                $args->{print_me} .= sprintf "%s", $choice if !$args->{ 'nochoices' };
+                ### If not the last item in the list
                 if ($choice ne ${$args->{choices}}[$#{$args->{choices}}]){
-                    $args->{print_me} .= sprintf ", "
+                    ### print comma and a space to separate the items
+                    $args->{print_me} .= sprintf ", "  if !$args->{ 'nochoices' };
                 }
             }
         }
 
+        ### If 'oneline' then close list with a close parenthesis 
         if (!$args->{ 'oneline' }){
         } else {
-          $args->{print_me} .= sprintf ")";
+          $args->{print_me} .= sprintf ")" if !$args->{ 'nochoices' };
         }
 
         $prompt_add = join(" ", @$prompt_add) if ( $prompt_add && $args->{multi} );
 
         ### we listed some choices -- add another newline for
         ### pretty printing
-        $args->{print_me} .= "\n" if $i;
+        $args->{print_me} .= "\n" if ($i && !$args->{ 'nochoices' });
 
         ### allowable answers are now equal to the choices listed
         $args->{allow} = $args->{choices};
@@ -310,7 +317,7 @@ sub _tt_readline {
     local $Params::Check::VERBOSE = 0;  # why is this?
     local $| = 1;                       # print ASAP
 
-    my ($default, $preput, $prompt, $choices, $multi, $resolved, $first, $oneline, $allow, $prompt_add, $print_me);
+    my ($default, $preput, $prompt, $choices, $multi, $resolved, $first, $oneline, $nochoices, $allow, $prompt_add, $print_me);
     my $tmpl = {
         default     => { default => undef,  strict_type => 0,
                             store => \$default },
@@ -323,6 +330,7 @@ sub _tt_readline {
         resolved    => { default => 0,      allow => [0, 1], store => \$resolved },
         first       => { default => 0,      allow => [0, 1], store => \$first },
         oneline     => { default => 0,      allow => [0, 1], store => \$oneline },
+        nochoices   => { default => 0,      allow => [0, 1], store => \$nochoices },
         allow       => { default => qr/.*/, store => \$allow, },
         prompt_add  => { default => '',     store => \$prompt_add, strict_type => 1 },
         print_me    => { default => '',     store => \$print_me },
@@ -368,11 +376,13 @@ sub _tt_readline {
 
         ### print it out for visual feedback
         if ($multi and defined($default)) {
+            ### If history is not disabled, 
             history( join ' ', grep { defined } $prompt, @$default ) if !$flg_no_history;
             ### and return the default
             return @$default;
         }
         else {
+            ### If history is not disabled, 
             history( join ' ', grep { defined } $prompt, $default ) if !$flg_no_history;
             ### and return the default
             return $default;
@@ -393,6 +403,7 @@ sub _tt_readline {
         {   my @lines   = split "\n", $prompt;
             $prompt     = pop @lines;
 
+            ### If history is not disabled, 
             if (!$flg_no_history){
               history( "$_\n" ) for @lines ;
             }
@@ -404,14 +415,23 @@ sub _tt_readline {
           : $term->readline($prompt);
 
         $answer     = $default unless length $answer;
+
+        ### If no default specified, then we could end up with an undefined value
         if (!defined $answer){
+            ### Set to empty string to avoid split error later
             $answer = "";
         }
 
-        #$term->addhistory( $answer ) if !$flg_no_history && !$flg_post_add_history && length $answer;
-        $term->addhistory( $answer ) if !$flg_no_history && !$resolved && length $answer;
+        ### Extra conditionals for suppressing history and adding only resolved item names
+        $term->addhistory( $answer ) if !$flg_no_history && !$resolved && !$flg_post_add_history && length $answer;
 
         ### add both prompt and answer to the history
+        ### If history is not disabled, 
+        ### and both the global post_add_history
+        ### or the 'resolved' option are false
+        ### then add the non-resolved item names to history 
+        ### (i.e. indices allowed)
+        ### Extra conditionals for suppressing history and adding only resolved item names
         history( defined $answer ? "$prompt $answer" : "$prompt", 0 )  if !$flg_no_history && !$resolved  && !$flg_post_add_history;
 
         ### if we're allowed to give multiple answers, split
@@ -425,7 +445,10 @@ sub _tt_readline {
 
             for my $answer (@answers) {
 
+              ### Check if the 'first' flag is not set
               if (!$first){
+                ### If the 'first' flag is not set
+                ### Then check all words in input, as before
 
                 ### a digit implies a multiple choice question,
                 ### a non-digit is an open answer
@@ -436,6 +459,8 @@ sub _tt_readline {
                    ) {
                     push @rv, $answer if allow( $answer, $allow );
                 } else {
+                    ### If the 'first' flag is set
+                    ### Then check only the first word in input
 
                     ### remember, the answer digits are +1 compared to
                     ### the choices, because humans want to start counting
@@ -453,6 +478,7 @@ sub _tt_readline {
                         )
                    ) {
                     push @rv, $answer if allow( $answer, $allow );
+                # New additional conditional statement
                 ### Pass any word *after* the first, without checking for a valid choice
                 } elsif ( ($answer =~ /\D/ && $answer ne $answers[0])
                      || ( $answer =~ /^\d+$/
@@ -490,18 +516,61 @@ sub _tt_readline {
         ### otherwise just return the answer, or answers, depending
         ### on the multi setting
         } else {
+
+=pod
+
+            ##### !!! This is invalid code - start !!! #####
+            ### Add only resolved items names, and not the indices
             #$term->addhistory( $multi ? @rv : $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
 
             ### add both prompt and answer to the history
+            # This will not work as history takes a scalar and not an array
             #history( $multi ? @rv : $rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
+            ##### !!! This is invalid code - end !!! #####
+
+=cut
+
+=pod
+
+            ##### !!! Condition on each line - start !!! #####
+            ### Add only resolved items names, and not the indices
             if ($multi){
+                ### If multi, loop through all answers and add to history
                 for my $answer (@answers) {
-                    history( $answer, 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
-                    $term->addhistory( $answer )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+                    $term->addhistory( $answer ) if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+                    ### add both prompt and answer to the history
+                    history( $answer, 0 ) if !$flg_no_history && ($resolved || $flg_post_add_history);
                 }
             } else {
-                history($rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
-                $term->addhistory( $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+                ### If not multi, add to history only the first checked word
+                $term->addhistory( $rv[0] ) if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+                ### add both prompt and answer to the history
+                history($rv[0], 0 ) if !$flg_no_history && ($resolved || $flg_post_add_history);
+            }
+            ##### !!! Condition on each line - end !!! #####
+
+=cut
+
+            ### If history is not disabled, 
+            ### and either the global post_add_history
+            ### or the 'resolved' option is true
+            ### then add the (now) resolved item names to history
+            ### (i.e. indices are not allowed)
+            if (!$flg_no_history && ($resolved || $flg_post_add_history)){
+                ### Add only resolved items names, and not the indices
+                if ($multi){
+                    ### If multi, loop through all answers and add to history
+                    for my $answer (@answers) {
+                        $term->addhistory( $answer );
+                        ### add both prompt and answer to the history
+                        history( $answer, 0 );
+                    }
+                } else {
+                    ### If not multi, add to history only the first checked word
+                    $term->addhistory( $rv[0] );
+                    ### add both prompt and answer to the history
+                    history($rv[0], 0 );
+                }
             }
 
             return $multi ? @rv : $rv[0];
