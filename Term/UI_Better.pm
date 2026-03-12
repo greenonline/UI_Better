@@ -468,10 +468,19 @@ sub _tt_readline {
         ### otherwise just return the answer, or answers, depending
         ### on the multi setting
         } else {
-            $term->addhistory( $multi ? @rv : $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+            #$term->addhistory( $multi ? @rv : $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
 
             ### add both prompt and answer to the history
-            history( $multi ? @rv : $rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
+            #history( $multi ? @rv : $rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
+            if ($multi){
+                for my $answer (@answers) {
+                    history( $answer, 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
+                    $term->addhistory( $answer )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+                }
+            } else {
+                history($rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
+                $term->addhistory( $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
+            }
 
             return $multi ? @rv : $rv[0];
         }
