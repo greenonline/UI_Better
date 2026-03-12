@@ -423,15 +423,14 @@ sub _tt_readline {
         }
 
         ### Extra conditionals for suppressing history and adding only resolved item names
-        $term->addhistory( $answer ) if !$flg_no_history && !$resolved && !$flg_post_add_history && length $answer;
-
-        ### add both prompt and answer to the history
         ### If history is not disabled, 
         ### and both the global post_add_history
         ### or the 'resolved' option are false
         ### then add the non-resolved item names to history 
         ### (i.e. indices allowed)
-        ### Extra conditionals for suppressing history and adding only resolved item names
+        $term->addhistory( $answer ) if !$flg_no_history && !$resolved && !$flg_post_add_history && length $answer;
+
+        ### add both prompt and answer to the history
         history( defined $answer ? "$prompt $answer" : "$prompt", 0 )  if !$flg_no_history && !$resolved  && !$flg_post_add_history;
 
         ### if we're allowed to give multiple answers, split
@@ -516,40 +515,6 @@ sub _tt_readline {
         ### otherwise just return the answer, or answers, depending
         ### on the multi setting
         } else {
-
-=pod
-
-            ##### !!! This is invalid code - start !!! #####
-            ### Add only resolved items names, and not the indices
-            #$term->addhistory( $multi ? @rv : $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
-
-            ### add both prompt and answer to the history
-            # This will not work as history takes a scalar and not an array
-            #history( $multi ? @rv : $rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
-            ##### !!! This is invalid code - end !!! #####
-
-=cut
-
-=pod
-
-            ##### !!! Condition on each line - start !!! #####
-            ### Add only resolved items names, and not the indices
-            if ($multi){
-                ### If multi, loop through all answers and add to history
-                for my $answer (@answers) {
-                    $term->addhistory( $answer ) if !$flg_no_history && ($resolved || $flg_post_add_history) ;
-                    ### add both prompt and answer to the history
-                    history( $answer, 0 ) if !$flg_no_history && ($resolved || $flg_post_add_history);
-                }
-            } else {
-                ### If not multi, add to history only the first checked word
-                $term->addhistory( $rv[0] ) if !$flg_no_history && ($resolved || $flg_post_add_history) ;
-                ### add both prompt and answer to the history
-                history($rv[0], 0 ) if !$flg_no_history && ($resolved || $flg_post_add_history);
-            }
-            ##### !!! Condition on each line - end !!! #####
-
-=cut
 
             ### If history is not disabled, 
             ### and either the global post_add_history
