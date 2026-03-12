@@ -87,7 +87,7 @@ C<Term::UI_Better::History> manpage or the C<SYNOPSIS> for details.
 
 =head1 METHODS
 
-=head2 $reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], preput => "text to put as default user input", multi => BOOL, print_me => "extra text to print & record", allow => $ref] );
+=head2 $reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], preput => "text to put as default user input", multi => BOOL, resolved => BOOL, first => BOOL, oneline => BOOL, nochoices => BOOL, print_me => "extra text to print & record", allow => $ref] );
 
 C<get_reply> asks a user a question, and then returns the reply to the
 caller. If the answer is invalid (more on that below), the question will
@@ -111,6 +111,25 @@ only by the C<Term::Readline::Gnu>).
 You can indicate that the user is allowed to enter multiple answers by
 toggling the C<multi> flag. Note that a list of answers will then be
 returned to you, rather than a simple string.
+
+You can indicate that only the choice names (and not the indices) are added
+to the history by toggling the C<resolved> flag.
+
+You can indicate that only the first answer word is checked for validity, 
+against the provided choice names, rather than all of the words in the 
+answer, by toggling the C<first> flag. Note that a list of all answers will
+then be returned to you, including the unchecked words after the first 
+word, rather than a simple string.
+
+You can have the choices displayed on just one line, in a comma separated
+list, by toggling the C<oneline> flag. Note that the indices of each choice
+will not be displayed, but may still be used to reference a particular 
+choice.
+
+You can suppress the display of the choices, by toggling the C<nochoices>
+flag, so that you can present the choices in your calling code instead. 
+Note that the indices of each choice will also not be displayed, but may 
+still be used to reference a particular choice.
 
 By specifying an C<allow> handler, you can yourself validate the answer
 a user gives. This can be any of the types that the Params::Check C<allow>
