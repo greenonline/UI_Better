@@ -5,11 +5,6 @@ An improved version of the Perl module Term::UI
 
  - [The problem with Term::UI](https://gr33nonline.wordpress.com/2026/03/10/the-problem-with-termui/)
 
-## Links
-
- - [The synopsis should probably show the disabling of the autohistory in ReadLine #21](https://github.com/jib/term-ui/issues/21)
- - [The history shows the index selected, rather than the selected item's name #22](https://github.com/jib/term-ui/issues/22)
-
 ## Notes
 
 ### Term::UI bugs
@@ -64,9 +59,7 @@ The history is saved here, in UI.pm, in `_tt_readline()`:
 
 ```
 
-##### The fix for the inconsistency
-
-The fix is to move the following three lines
+Fix: Move the following three lines
 
 ```none
         $term->addhistory( $answer ) if length $answer;
@@ -76,7 +69,7 @@ The fix is to move the following three lines
 
 ```
 
-to the `else{}` block containing the return from `_tt_readline()` at the end of the function, like so:
+ to the `else{}` block containing the return from `_tt_readline()` at the end of the function, like so:
 
 
 ```none
@@ -254,15 +247,9 @@ Commenting out both lines results in the index being saved only once, no duplica
 #### In `readline.pm`
 
 In `readline.pm` there is a function `add_line_to_history()`. 
-It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. 
+It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. If you comment out the calls to `add_line_to_history()` in both `F_AcceptLine()` and `F_SaveLine` then no history is written and the issue of the written index goes away.
 
-##### The fix for the duplicates - module hack
-
-If you comment out the calls to `add_line_to_history()` in both `F_AcceptLine()` and `F_SaveLine` then no history is written and the issue of the written index goes away.
-
-If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – that is to say that the history only shows the actual selection and never the index.
-
-*However, there is a **better and simpler** fix, please continue reading...*
+If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – tht is to say that the history only shows the actual selection and never the index.
 
 
 ### Effecting the changes
@@ -274,6 +261,7 @@ However, duplicating `readline.pm` and creating `ReadLine_Better/readline_Better
 Surely, there should be a standard way of invoking `ReadLine` and disabling the history – without the need to "hack" the module itself?
 
 ### Disabling the "autohistory"
+
 
 See [Term::ReadLine - I need to hit the up arrow twice to retrieve history](https://stackoverflow.com/q/13332908/4424636) which pretty much describes **Bug#2** above, the duplicate call to `$term->addhistory()`.
 
@@ -303,7 +291,7 @@ So, the only changes to the modules themselves required are to `UI.pm`.
 
 A fixed verion of `UI.pm` called `UI_Better.pm` is included in this repository. 
 
-For the ease of changing the behaviour of `UI_Better`, there are two flag near the top of the file:
+For the ease of changing the behaviour of `UI_Better`, there are two flags near the top of the file:
 
 ```none
 our $flg_post_add_history = 1;  # Move the add history to the end of _tt_readline()
@@ -311,3 +299,27 @@ our $flg_no_history = 0;        # Disable all history calls in _tt_readline()
 ```
 
 The associated file `UI_Better/History_Better.pm` is actually identical (apart from the package name changes) to the original `History.pm` of [Term::UI](https://perldoc.perl.org/5.12.2/Term::UI) as is only included for completeness.
+
+### New options
+
+`get_reply()` now takes two additional optional Boolean arguments, `resolved` and `first`. These add only item names (*not* item indices) to the history, and; to only check the first word in a multiword answer, against the choices provided, respectively. These both default to `off`, or `false`.
+
+
+`$reply = $term->get_reply( prompt => 'question?', [choices => \@list, default => $list[0], multi => BOOL, resolved => BOOL, first => BOOL, print_me => "extra text to print & record", allow => $ref] );`
+
+ - `resolved` - add only fully resolved names to the history (instead of returning both items' indices and names)
+ - `first` - check *only the first word* in a multi-word input against the valid choices (instead of all of the words), and return *all* words as an array.
+
+Example usage:
+
+```none
+  return $term->get_reply(
+                  prompt => $myprompt,
+                  choices => \@mychoices,
+                  default => $mydefault,
+                  multi => 1,
+                  resolved => 1,
+                  first => 1,
+                  print_me => $myprintme
+              );
+```
