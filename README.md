@@ -15,7 +15,7 @@ There is a bug or two in v0.50 of [Term::UI](https://perldoc.perl.org/5.12.2/Ter
  - Duplicate history - two entries for each input
  - Every word, on a multi-word input, is checked for validity -> Enhancement: Check only the first word for validity and return all words if the first is valid.
 
-#### Bug#1: History is incorrect/inconsistant
+### Bug#1: History is incorrect/inconsistant
 
 The history shows the shortcut menu selections rather than the actual option selected.
 
@@ -60,7 +60,9 @@ The history is saved here, in UI.pm, in `_tt_readline()`:
 
 ```
 
-Fix: Move the following three lines
+#### Fix
+
+Move the following three lines
 
 ```none
         $term->addhistory( $answer ) if length $answer;
@@ -88,7 +90,7 @@ Fix: Move the following three lines
 
 That way, any numeric options entered, have been converted to their actual values at that point of `return()`. Otherwise, prior to that point, only the default option is correctly added, and all other selections, made using their index, have their numeric index added to the history instead.
 
-#### Bug#2: Duplicate entries
+### Bug#2: Duplicate entries
 
 On top of that, the module originally saves the history *twice*, if you do not select the default option. In other words, every history item is repeated twice, when the non-default option is selected. 
 
@@ -116,7 +118,7 @@ What is your favourite colour? [1]: 3
 Do you like cookies? [Y/n]: 3                                               
 ```
 
-##### Further experimentation – Not really required
+#### Further experimentation – Not really required
 
 If you use this extended example from the synopsis (but with an aditional third question/response), with the original `UI.pm` code, the issue becomes clearer:
 
@@ -173,7 +175,7 @@ $hist = $term->history_as_string;
 
 You require two up key presses to get to the preceding history item: When you get to the third question, press the up arrow repeatedly – there are two "n" then "green" and finally "3".
 
-##### Where is the history set?
+#### Where is the history set?
 
 Even if you comment out each and every (there are 8) occurence of `history(` in `UI.pm`, the history is still saved, once. So it must be also be saved either by `Term::UI::History.pm`, or `Term::ReadLine`. 
 
@@ -192,7 +194,7 @@ However, there *appear* to be no "save to history" statements in UI::History.pm,
 
 Is `autohistory` the issue? Changing it doesn't seem to have an effect, however.
 
-##### The duplication is caused by `$term->addhistory()`
+#### The duplication is caused by `$term->addhistory()`
 
 By accident, I noted that commenting out the line
 
@@ -245,14 +247,14 @@ In fact, the behaviour of commenting out only the second line is the same as not
 
 Commenting out both lines results in the index being saved only once, no duplicates. However, where is this index being saved?
 
-##### In `readline.pm`
+#### In `readline.pm`
 
 In `readline.pm` there is a function `add_line_to_history()`. 
 It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. If you comment out the calls to `add_line_to_history()` in both `F_AcceptLine()` and `F_SaveLine` then no history is written and the issue of the written index goes away.
 
 If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – that is to say that the history only shows the actual selection and never the index.
 
-#### Bug#3 - Enhancement: Check only the first word for validity
+### Bug#3 - Enhancement: Check only the first word for validity
 
 Some code changes have been made to the conditional within the `LOOP` in `_tt_readline()` - an additional condition or two. 
 
