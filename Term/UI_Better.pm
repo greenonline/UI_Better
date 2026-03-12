@@ -20,7 +20,7 @@ push @Term::ReadLine::Stub::ISA, __PACKAGE__
         unless grep { $_ eq __PACKAGE__ } @Term::ReadLine::Stub::ISA;
 
 
-our $flg_post_add_history = 1;  # Move the add history to the end of _tt_readline()
+our $flg_post_add_history = 0;  # Move the add history to the end of _tt_readline()
 our $flg_no_history = 0;        # Disable all history calls in _tt_readline()
 
 =pod
@@ -136,6 +136,8 @@ sub get_reply {
         prompt      => { default => '',     strict_type => 1, required => 1 },
         choices     => { default => [],     strict_type => 1 },
         multi       => { default => 0,      allow => [0, 1] },
+        resolved    => { default => 1,      allow => [0, 1] },
+        first       => { default => 1,      allow => [0, 1] },
         allow       => { default => qr/.*/ },
         print_me    => { default => '',     strict_type => 1 },
     };
@@ -290,7 +292,7 @@ sub _tt_readline {
     local $Params::Check::VERBOSE = 0;  # why is this?
     local $| = 1;                       # print ASAP
 
-    my ($default, $preput, $prompt, $choices, $multi, $allow, $prompt_add, $print_me);
+    my ($default, $preput, $prompt, $choices, $multi, $resolved, $first, $allow, $prompt_add, $print_me);
     my $tmpl = {
         default     => { default => undef,  strict_type => 0,
                             store => \$default },
@@ -300,6 +302,8 @@ sub _tt_readline {
         choices     => { default => [],     strict_type => 1,
                             store => \$choices },
         multi       => { default => 0,      allow => [0, 1], store => \$multi },
+        resolved    => { default => 0,      allow => [0, 1], store => \$resolved },
+        first       => { default => 0,      allow => [0, 1], store => \$first },
         allow       => { default => qr/.*/, store => \$allow, },
         prompt_add  => { default => '',     store => \$prompt_add, strict_type => 1 },
         print_me    => { default => '',     store => \$print_me },
@@ -382,10 +386,11 @@ sub _tt_readline {
 
         $answer     = $default unless length $answer;
 
-        $term->addhistory( $answer ) if !$flg_no_history && !$flg_post_add_history && length $answer;
+        #$term->addhistory( $answer ) if !$flg_no_history && !$flg_post_add_history && length $answer;
+        $term->addhistory( $answer ) if !$flg_no_history && !$resolved && length $answer;
 
         ### add both prompt and answer to the history
-        history( defined $answer ? "$prompt $answer" : "$prompt", 0 )  if !$flg_no_history && !$flg_post_add_history;
+        history( defined $answer ? "$prompt $answer" : "$prompt", 0 )  if !$flg_no_history && !$resolved  && !$flg_post_add_history;
 
         ### if we're allowed to give multiple answers, split
         ### the answer on whitespace
@@ -397,6 +402,8 @@ sub _tt_readline {
         if( @$choices ) {
 
             for my $answer (@answers) {
+
+              if (!$first){
 
                 ### a digit implies a multiple choice question,
                 ### a non-digit is an open answer
@@ -414,6 +421,32 @@ sub _tt_readline {
                     push @rv, $choices->[ $answer - 1 ]
                         if $answer > 0 && defined $choices->[ $answer - 1 ];
                 }
+              } else {
+                ### a digit implies a multiple choice question,
+                ### a non-digit is an open answer
+                ### Check only the first word for a valid choice
+                if ( ($answer =~ /\D/ && $answer eq $answers[0])
+                     || ( $answer =~ /^\d+$/
+                          && (@$choices < $answer && $answer == $answers[0])
+                        )
+                   ) {
+                    push @rv, $answer if allow( $answer, $allow );
+                ### Pass any word *after* the first, without checking for a valid choice
+                } elsif ( ($answer =~ /\D/ && $answer ne $answers[0])
+                     || ( $answer =~ /^\d+$/
+                          && $answer != $answers[0]
+                        )
+                   ) {
+                    push @rv, $answer;
+                } else {
+
+                    ### remember, the answer digits are +1 compared to
+                    ### the choices, because humans want to start counting
+                    ### at 1, not at 0
+                    push @rv, $choices->[ $answer - 1 ]
+                        if $answer > 0 && defined $choices->[ $answer - 1 ];
+                }
+              }
             }
 
         ### no fixed list of choices.. just check if the answers
@@ -435,15 +468,16 @@ sub _tt_readline {
         ### otherwise just return the answer, or answers, depending
         ### on the multi setting
         } else {
-            $term->addhistory( $multi ? @rv : $rv[0] )  if !$flg_no_history && $flg_post_add_history;
+            $term->addhistory( $multi ? @rv : $rv[0] )  if !$flg_no_history && ($resolved || $flg_post_add_history) ;
 
             ### add both prompt and answer to the history
-            history( $multi ? @rv : $rv[0], 0 )  if !$flg_no_history && $flg_post_add_history;
+            history( $multi ? @rv : $rv[0], 0 )  if !$flg_no_history && ($resolved || $flg_post_add_history);
 
             return $multi ? @rv : $rv[0];
         }
     }
 }
+
 
 =head2 ($opts, $munged) = $term->parse_options( STRING );
 
