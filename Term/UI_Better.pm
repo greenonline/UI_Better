@@ -136,8 +136,8 @@ sub get_reply {
         prompt      => { default => '',     strict_type => 1, required => 1 },
         choices     => { default => [],     strict_type => 1 },
         multi       => { default => 0,      allow => [0, 1] },
-        resolved    => { default => 1,      allow => [0, 1] },
-        first       => { default => 1,      allow => [0, 1] },
+        resolved    => { default => 0,      allow => [0, 1] },
+        first       => { default => 0,      allow => [0, 1] },
         allow       => { default => qr/.*/ },
         print_me    => { default => '',     strict_type => 1 },
     };
