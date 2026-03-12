@@ -13,6 +13,7 @@ There is a bug or two in v0.50 of [Term::UI](https://perldoc.perl.org/5.12.2/Ter
 
  - History inconsistency – index or selection
  - Duplicate history - two entries for each input
+ - Every word, on a multi-word input, is checked for validity -> Enhancement: Check only the first word for validity and return all words if the first is valid.
 
 #### Bug#1: History is incorrect/inconsistant
 
@@ -251,6 +252,11 @@ It is called from two functions, in `F_AcceptLine()` and `F_SaveLine`. If you co
 
 If you combine these two commented out lines with the fix above for **Bug#1**, then the behaviour of the history is as expected and desired – tht is to say that the history only shows the actual selection and never the index.
 
+#### Bug#3 - Enhancement: Check only the first word for validity
+
+Some code changes have been made to the conditional within the `LOOP` in `_tt_readline()` - an additional condition or two. 
+
+If `first` is set true, then only the first word is checked, against the choices, for validity. If it is valid, then the first word and all of the other words are returned in an array. If the first word is invalid, then the user has to re-enter the input as before. This functionality also requires  `multi` to be set to `true`.
 
 ### Effecting the changes
 
@@ -282,7 +288,7 @@ However, from [Term::ReadLine::Gnu vs. history control](https://www.perlmonks.or
 
 ```none
 # This disables autohistory
-$term->MinLine(MAX);
+$term->MinLine(1000);
 ```
 
 So, the only changes to the modules themselves required are to `UI.pm`.
