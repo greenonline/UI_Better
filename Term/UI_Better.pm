@@ -138,6 +138,7 @@ sub get_reply {
         multi       => { default => 0,      allow => [0, 1] },
         resolved    => { default => 0,      allow => [0, 1] },
         first       => { default => 0,      allow => [0, 1] },
+        oneline     => { default => 0,      allow => [0, 1] },
         allow       => { default => qr/.*/ },
         print_me    => { default => '',     strict_type => 1 },
     };
@@ -175,6 +176,11 @@ sub get_reply {
         my $i;
         my $choices_width = length( sprintf( "%d", scalar @{ $args->{ 'choices' } } ) );
 
+        if (!$args->{ 'oneline' }){
+        } else {
+          $args->{print_me} .= sprintf "(";
+        }
+
         for my $choice ( @{$args->{choices}} ) {
             $i++;   # the answer counter -- but humans start counting
                     # at 1 :D
@@ -191,7 +197,19 @@ sub get_reply {
             }
 
             ### create a "DIGIT> choice" type line
-            $args->{print_me} .= sprintf "\n%*s> %-s", $choices_width, $i, $choice;
+            if (!$args->{ 'oneline' }){
+                $args->{print_me} .= sprintf "\n%*s> %-s", $choices_width, $i, $choice;
+            } else {
+                $args->{print_me} .= sprintf "%s", $choice;
+                if ($choice ne ${$args->{choices}}[$#{$args->{choices}}]){
+                    $args->{print_me} .= sprintf ", "
+                }
+            }
+        }
+
+        if (!$args->{ 'oneline' }){
+        } else {
+          $args->{print_me} .= sprintf ")";
         }
 
         $prompt_add = join(" ", @$prompt_add) if ( $prompt_add && $args->{multi} );
@@ -292,7 +310,7 @@ sub _tt_readline {
     local $Params::Check::VERBOSE = 0;  # why is this?
     local $| = 1;                       # print ASAP
 
-    my ($default, $preput, $prompt, $choices, $multi, $resolved, $first, $allow, $prompt_add, $print_me);
+    my ($default, $preput, $prompt, $choices, $multi, $resolved, $first, $oneline, $allow, $prompt_add, $print_me);
     my $tmpl = {
         default     => { default => undef,  strict_type => 0,
                             store => \$default },
@@ -304,6 +322,7 @@ sub _tt_readline {
         multi       => { default => 0,      allow => [0, 1], store => \$multi },
         resolved    => { default => 0,      allow => [0, 1], store => \$resolved },
         first       => { default => 0,      allow => [0, 1], store => \$first },
+        oneline     => { default => 0,      allow => [0, 1], store => \$oneline },
         allow       => { default => qr/.*/, store => \$allow, },
         prompt_add  => { default => '',     store => \$prompt_add, strict_type => 1 },
         print_me    => { default => '',     store => \$print_me },
@@ -385,6 +404,9 @@ sub _tt_readline {
           : $term->readline($prompt);
 
         $answer     = $default unless length $answer;
+        if (!defined $answer){
+            $answer = "";
+        }
 
         #$term->addhistory( $answer ) if !$flg_no_history && !$flg_post_add_history && length $answer;
         $term->addhistory( $answer ) if !$flg_no_history && !$resolved && length $answer;
